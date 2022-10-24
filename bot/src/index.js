@@ -16,55 +16,20 @@ server.post(
   restify.plugins.bodyParser(), // Add more parsers if needed
   async (req, res) => {
     for (const target of await bot.notification.installations()) {
-      await target.sendAdaptiveCard(
+
+    let mensagem = req.body.mensagem;
+    let email = req.body.usuario;
+    let jiraLink = req.body.link;
+
+    await getMember(email, await target.members())?.sendAdaptiveCard(
         AdaptiveCards.declare(notificationTemplate).render({
-          title: "New Event Occurred!",
-          appName: "Contoso App Notification",
-          description: `This is a sample http-triggered notification to ${target.type}`,
-          notificationUrl: "https://www.adaptivecards.io/",
+          title: "Alerta de SLA!",
+          appName: "Bot Sustentação",
+          description: mensagem,
+          notificationUrl: jiraLink
         })
       );
     }
-
-    /****** To distinguish different target types ******/
-    /** "Channel" means this bot is installed to a Team (default to notify General channel)
-    if (target.type === NotificationTargetType.Channel) {
-      // Directly notify the Team (to the default General channel)
-      await target.sendAdaptiveCard(...);
-
-      // List all channels in the Team then notify each channel
-      const channels = await target.channels();
-      for (const channel of channels) {
-        await channel.sendAdaptiveCard(...);
-      }
-
-      // List all members in the Team then notify each member
-      const members = await target.members();
-      for (const member of members) {
-        await member.sendAdaptiveCard(...);
-      }
-    }
-    **/
-
-    /** "Group" means this bot is installed to a Group Chat
-    if (target.type === NotificationTargetType.Group) {
-      // Directly notify the Group Chat
-      await target.sendAdaptiveCard(...);
-
-      // List all members in the Group Chat then notify each member
-      const members = await target.members();
-      for (const member of members) {
-        await member.sendAdaptiveCard(...);
-      }
-    }
-    **/
-
-    /** "Person" means this bot is installed as a Personal app
-    if (target.type === NotificationTargetType.Person) {
-      // Directly notify the individual person
-      await target.sendAdaptiveCard(...);
-    }
-    **/
 
     res.json({});
   }
@@ -74,3 +39,13 @@ server.post(
 server.post("/api/messages", async (req, res) => {
   await bot.requestHandler(req, res);
 });
+
+let getMember = (email, members) => {
+  for(const member of members){
+    console.log(member.account.email);
+    if(member.account.email == email){
+      return member;
+    }
+  }
+  return null;
+}
